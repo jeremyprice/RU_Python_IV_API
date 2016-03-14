@@ -18,7 +18,7 @@ def debug_mode():
     requests_log.propagate = True
 
 
-debug_mode()
+#debug_mode()
 #TODO: pull this in from command line
 url = "http://localhost:5000/"
 
@@ -27,7 +27,11 @@ first_hit = requests.get(url)
 first_json = first_hit.json()
 token = first_json['token']
 next_url = first_json['next_url']
+print "My ID is {}".format(token)
 
-# second request
-second_hit = requests.post(next_url, json={'token': token})
-print second_hit.json()
+# subsequent requests
+for req_num in xrange(10):
+    print "Accessing {}".format(next_url)
+    hit = requests.post(next_url, json={'token': token})
+    response = hit.json()
+    next_url = response['next_url']

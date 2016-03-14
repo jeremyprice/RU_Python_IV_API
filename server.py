@@ -45,7 +45,14 @@ def root():
 @app.route('/steps/<step_id>', methods=['POST'])
 def step(step_id):
     #TODO: validate request
-    return jsonify(request.get_json())
+    # invalid token
+    # invalid step
+    # invalid post type
+    req_json = request.get_json()
+    client = active_clients[req_json['token']]
+    next_url = url_for('step', step_id=client.get_next_path(step_id),
+                             _external=True)
+    return jsonify(next_url=next_url)
 
 if __name__ == '__main__':
     app.run(debug=True)
