@@ -30,8 +30,13 @@ next_url = first_json['next_url']
 print "My ID is {}".format(token)
 
 # subsequent requests
-for req_num in xrange(10):
+done = False
+while not done:
     print "Accessing {}".format(next_url)
     hit = requests.post(next_url, json={'token': token})
     response = hit.json()
-    next_url = response['next_url']
+    if 'answer' in response:
+        print response
+        done = True
+    else:
+        next_url = response.popitem()[1]
