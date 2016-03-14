@@ -1,26 +1,51 @@
 #!/usr/bin/env python2
 
-import flask
+from flask import Flask, url_for, jsonify, request
 import uuid
+
+class ActiveClient(object):
+    def __init__(self, my_id):
+        self.my_id = my_id
+        self.next_path = generate_id()
+        self.path_map = {}
+
+    def get_next_path(self, from_path=None):
+        if from_path is None:
+            return self.next_path
+        if from_path in self.path_map:
+            return self.path_map[from_path]
+        else:
+            new_path = generate_id()
+            self.path_map[from_path] = new_path
+            return new_path
+
+    def validate_path(self, path):
+        return from_path in self.path_map
+
 
 def generate_id():
     return uuid.uuid4().hex
 
 
-app = flask.Flask(__name__)
+app = Flask(__name__)
+active_clients = {}
+
 
 @app.route('/')
 def root():
     request_id = generate_id()
     next_path = generate_id()
-    #TODO: register the id and path in the db
+    client = ActiveClient(request_id)
+    active_clients[request_id] = client
 
-    next_url = flask.url_for('step', step_id=next_path, _external=True)
-    return flask.jsonify(token=request_id, next_url=next_url)
+    next_url = url_for('step', step_id=client.get_next_path(),
+                             _external=True)
+    return jsonify(token=request_id, next_url=next_url)
 
-@app.route('/steps/<step_id>')
+@app.route('/steps/<step_id>', methods=['POST'])
 def step(step_id):
-    pass
+    #TODO: validate request
+    return jsonify(request.get_json())
 
 if __name__ == '__main__':
     app.run(debug=True)
