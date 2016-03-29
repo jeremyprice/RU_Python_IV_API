@@ -24,8 +24,8 @@ url = "http://localhost:5000/"  # TODO: pull this in from command line
 # first request
 first_hit = requests.get(url)
 first_json = first_hit.json()
-token = first_json['token']
-next_url = first_json['next_url']
+token = first_json.pop('token')
+title, next_url = first_json.popitem()
 print("My ID is {}".format(token))
 
 # subsequent requests
@@ -38,4 +38,5 @@ while not done:
         print(response)
         done = True
     else:
-        next_url = response.popitem()[1]
+        token = response.pop('token')
+        title, next_url = response.popitem()
