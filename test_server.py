@@ -3,22 +3,8 @@
 import server
 import unittest
 import uuid
-
-
-class ServerHelpersTestCase(unittest.TestCase):
-    '''test the simple existence of objects and helper functions'''
-
-    def test_uniq_generate_id(self):
-        id1 = server.generate_id()
-        id2 = server.generate_id()
-        self.assertNotEqual(id1, id2)
-
-    def test_uuid_generate_id(self):
-        id1 = server.generate_id()
-        try:
-            uid = uuid.UUID(id1)  # noqa
-        except ValueError:
-            self.fail("Invalid uuid from generate_id")
+import json
+import validators
 
 
 class ServerTestCase(unittest.TestCase):
@@ -27,6 +13,48 @@ class ServerTestCase(unittest.TestCase):
         server.app.config['TESTING'] = True
         self.app = server.app.test_client()
 
+    def _json_get(self, url):
+        result = self.app.get(url)
+        # let the next line blow up if JSON error
+        return json.loads(result.data)
+
+    def _json_post(self, url, data):
+        json_d = json.dumps(data)
+        result = self.app.post(url, data=json_d,
+                               content_type="application/json")
+        # let the next line blow up if JSON error
+        return json.loads(result.data)
+
+    def test_get_root_json_len(self):
+        rootj = self._json_get('/')
+        self.assertEqual(len(rootj), 2)
+
+    def test_get_root_json_has_token(self):
+        rootj = self._json_get('/')
+        self.assertIn('token', rootj)
+
+    def test_get_root_json_valid_token(self):
+        rootj = self._json_get('/')
+        try:
+            uid = uuid.UUID(rootj['token'])  # noqa
+        except ValueError:
+            self.fail("Invalid id for token")
+
+    def test_first_url(self):
+        rootj = self._json_get('/')
+        rootj.pop('token')
+        key, url = rootj.popitem()
+        self.assertTrue(validators.url(url, require_tld=False))
+
+    def test_post_2nd_step(self):
+        rootj = self._json_get('/')
+        token = rootj.pop('token')
+        key, url = rootj.popitem()
+        secondj = self._json_post(url, data={'token': token})
+        self.assertIn('token', secondj)
+        secondj.pop('token')
+        key, url = secondj.popitem()
+        self.assertTrue(validators.url(url, require_tld=False))
 
 if __name__ == '__main__':
     unittest.main()
