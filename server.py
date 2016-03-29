@@ -4,10 +4,15 @@ from flask import Flask, url_for, jsonify, request
 import uuid
 import datetime
 
-class InvalidClient(Exception): pass
+
+class InvalidClient(Exception):
+    pass
+
 
 class ActiveClient(object):
-    CLIENT_TIMEOUT = 60 # seconds
+
+    CLIENT_TIMEOUT = 60  # seconds
+
     def __init__(self, my_id):
         self.my_id = my_id
         self.first_path = generate_id()
@@ -38,7 +43,7 @@ class ActiveClient(object):
     def validate_path(self, path):
         if not self.is_valid():
             raise InvalidClient()
-        return from_path in self.path_map
+        return path in self.path_map
 
     def is_valid(self):
         delta = datetime.datetime.now() - self.creation_time
@@ -62,12 +67,13 @@ def root():
 
     path = client.get_next_path()
     next_url = url_for('step', step_id=path,
-                             _external=True)
+                       _external=True)
     return jsonify(token=request_id, next_url=next_url)
+
 
 @app.route('/steps/<step_id>', methods=['POST'])
 def step(step_id):
-    #TODO: validate request
+    # TODO: validate request
     # invalid token
     # invalid step
     # invalid post type
@@ -78,7 +84,7 @@ def step(step_id):
         next_url = url_for('step', step_id=path,
                            _external=True)
         outgoing = {json_link_titles[client.get_path_depth(path)]: next_url}
-    else: # no path left, they are at the end!
+    else:  # no path left, they are at the end!
         outgoing = {'answer': 42, 'greeting': 'Thanks for playing!'}
     return jsonify(**outgoing)
 
