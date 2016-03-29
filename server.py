@@ -2,15 +2,22 @@
 
 from flask import Flask, url_for, jsonify, request
 import uuid
+import datetime
+
+class InvalidClient(Exception): pass
 
 class ActiveClient(object):
+    CLIENT_TIMEOUT = 60 # seconds
     def __init__(self, my_id):
         self.my_id = my_id
         self.first_path = generate_id()
         self.path_map = {}
         self.path_index = [self.first_path]
+        self.creation_time = datetime.datetime.now()
 
     def get_next_path(self, from_path=None):
+        if not self.is_valid():
+            raise InvalidClient()
         if from_path is None:
             return self.first_path
         if from_path in self.path_map:
@@ -24,10 +31,18 @@ class ActiveClient(object):
             return ''
 
     def get_path_depth(self, path):
+        if not self.is_valid():
+            raise InvalidClient()
         return self.path_index.index(path)
 
     def validate_path(self, path):
+        if not self.is_valid():
+            raise InvalidClient()
         return from_path in self.path_map
+
+    def is_valid(self):
+        delta = datetime.datetime.now() - self.creation_time
+        return delta.seconds < ActiveClient.CLIENT_TIMEOUT
 
 
 def generate_id():
