@@ -14,16 +14,19 @@ class ActiveClient(object):
 
     def __init__(self, my_id):
         self.my_id = my_id
-        self.first_path = generate_id()
         self.path_map = {}
-        self.path_index = [self.first_path]
+        self.path_index = [generate_id()]
         self.creation_time = datetime.datetime.now()
+
+    @property
+    def id(self):
+        return self.my_id
 
     def get_next_path(self, from_path=None):
         if not self.is_valid():
             raise InvalidClient()
         if from_path is None:
-            return (ActiveClient.LINK_TITLES[0], self.first_path)
+            return (ActiveClient.LINK_TITLES[0], self.path_index[0])
         if from_path in self.path_map:
             index = self.path_index.index(from_path)
             title = ActiveClient.LINK_TITLES[index]
@@ -41,13 +44,22 @@ class ActiveClient(object):
     def get_path_depth(self, path):
         if not self.is_valid():
             raise InvalidClient()
-        return self.path_index.index(path)
+        try:
+            retval = self.path_index.index(path)
+        except ValueError:
+            retval = -1
+        return retval
 
     def validate_path(self, path):
         if not self.is_valid():
             raise InvalidClient()
-        return path in self.path_map
+        return path in self.path_index
 
     def is_valid(self):
         delta = datetime.datetime.now() - self.creation_time
         return delta.seconds < ActiveClient.CLIENT_TIMEOUT
+
+
+class ClientList(object):
+    def __init__(self):
+        self.clients = {}
