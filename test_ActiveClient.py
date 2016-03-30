@@ -1,23 +1,55 @@
 #!/usr/bin/env python2
 
-from client_lib import ActiveClient, InvalidClient
+from client_lib import ActiveClient, InvalidClient, ClientManager
 import unittest
 
 
-class ActiveClientCase(unittest.TestCase):
-    '''test all things to do with the ActiveClient class'''
-
-    def test_create_ActiveClient_class(self):
+class ClientManagerCase(unittest.TestCase):
+    def test_create_ClientManager_instance(self):
         try:
-            ac = ActiveClient('123')  # noqa
+            cm = ClientManager()  # noqa
         except NameError:
-            self.fail("Can't create an ActiveClient class")
+            self.fail("Can't create a ClientManager class")
 
+    def test_new_client(self):
+        cm = ClientManager()
+        client = cm.new_client()
+        self.assertIsInstance(client, ActiveClient)
+
+    def test_get_client(self):
+        cm = ClientManager()
+        client = cm.new_client()
+        client2 = cm.get_client(client.id)
+        self.assertEquals(client, client2)
+
+    def test_clean_list(self):
+        import time
+        cm = ClientManager()
+        client = cm.new_client()
+        old_timeout = ActiveClient.CLIENT_TIMEOUT
+        ActiveClient.CLIENT_TIMEOUT = 1
+        time.sleep(1.1)
+        client = cm.get_client(client.id)
+        ActiveClient.CLIENT_TIMEOUT = old_timeout
+        self.assertIsNone(client)
+
+
+class InvalidClientCase(unittest.TestCase):
     def test_create_InvalidClient_class(self):
         try:
             ac = InvalidClient('123')  # noqa
         except NameError:
             self.fail("Can't create an InvalidClient class")
+
+
+class ActiveClientCase(unittest.TestCase):
+    '''test all things to do with the ActiveClient class'''
+
+    def test_create_ActiveClient_instance(self):
+        try:
+            ac = ActiveClient('123')  # noqa
+        except NameError:
+            self.fail("Can't create an ActiveClient class")
 
     def test_id_arg(self):
         ac_id = '123'

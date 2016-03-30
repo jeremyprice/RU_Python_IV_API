@@ -1,24 +1,21 @@
 #!/usr/bin/env python2
 
-from flask import Flask, url_for, jsonify, request
+from flask import Flask, url_for, jsonify, request, abort
 from utils import generate_id
-from client_lib import ActiveClient
+from client_lib import ActiveClient, ClientManager
 
 
 app = Flask(__name__)
-active_clients = {}
+client_manager = ClientManager()
 
 
 @app.route('/', methods=['GET'])
 def root():
-    request_id = generate_id()
-    client = ActiveClient(request_id)
-    active_clients[request_id] = client
-
+    client = client_manager.new_client()
     title, path = client.get_next_path()
     next_url = url_for('step', step_id=path,
                        _external=True)
-    output = {title: next_url, 'token': request_id}
+    output = {title: next_url, 'token': client.id}
     return jsonify(**output)
 
 
@@ -30,7 +27,9 @@ def step(step_id):
     # invalid post type
     req_json = request.get_json()
     token = req_json['token']
-    client = active_clients[token]
+    client = client_manager.get_client(token)
+    if not client:
+        abort(401)
     next_path = client.get_next_path(step_id)
     if next_path:
         title, path = next_path

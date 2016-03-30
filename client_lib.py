@@ -60,6 +60,31 @@ class ActiveClient(object):
         return delta.seconds < ActiveClient.CLIENT_TIMEOUT
 
 
-class ClientList(object):
+class ClientManager(object):
     def __init__(self):
         self.clients = {}
+
+    def new_client(self):
+        '''Create a new client and add it to the managed list'''
+        self._clean_list()
+        cl_id = generate_id()
+        nc = ActiveClient(cl_id)
+        self.clients[cl_id] = nc
+        return nc
+
+    def get_client(self, client_id):
+        '''Get a client from the store based on client_id
+        returns valid ActiveClient object on success or None on error'''
+        self._clean_list()
+        try:
+            client = self.clients[client_id]
+        except KeyError:
+            return None
+        if client.is_valid():
+            return client
+        else:
+            return None
+
+    def _clean_list(self):
+        new_clients = {k: v for k, v in self.clients.items() if v.is_valid()}
+        self.clients = new_clients
