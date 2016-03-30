@@ -1,0 +1,35 @@
+---
+  - name: Configure server
+    hosts: py4class
+
+    vars:
+      packages:
+        - python-pip
+        - nginx
+        - python-dev
+
+    tasks:
+      - name: setup www-data user
+        user: name=www-data state=present
+
+      - name: install needed packages
+        apt: name={{ item }} state=latest
+        with_items: "{{ packages }}"
+
+      - name: ensure nginx started and boot enabled
+        service: name=nginx state=started enabled=yes
+
+      - name: upload python package requirements
+        copy: src=requirements.txt dest=/root/requirements.txt
+
+      - name: install python packages
+        pip: requirements=/root/requirements.txt state=latest
+
+      - name: create deployment directories
+        file: path=/var/app/py4class state=directory owner=www-data
+
+      - name: clone the repo
+        git: repo=git://github.com/jeremyprice/RU_Python_IV_API.git
+             dest=/var/app/py4class
+        become: yes
+        become_user: www-data
