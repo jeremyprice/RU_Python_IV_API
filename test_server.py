@@ -56,5 +56,18 @@ class ServerTestCase(unittest.TestCase):
         key, url = secondj.popitem()
         self.assertTrue(validators.url(url, require_tld=False))
 
+    def test_all_steps(self):
+        rootj = self._json_get('/')
+        token = rootj.pop('token')
+        key, url = rootj.popitem()
+        while url:
+            nextj = self._json_post(url, data={'token': token})
+            if 'answer' in nextj:  # we found the last item
+                break
+            self.assertIn('token', nextj)
+            nextj.pop('token')
+            key, url = nextj.popitem()
+            self.assertTrue(validators.url(url, require_tld=False))
+
 if __name__ == '__main__':
     unittest.main()
