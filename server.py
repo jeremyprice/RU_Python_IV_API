@@ -1,8 +1,7 @@
 #!/usr/bin/env python2
 
 from flask import Flask, url_for, jsonify, request, abort
-from utils import generate_id
-from client_lib import ActiveClient, ClientManager
+from client_lib import ClientManager
 
 
 app = Flask(__name__)
@@ -21,11 +20,9 @@ def root():
 
 @app.route('/steps/<step_id>', methods=['POST'])
 def step(step_id):
-    # TODO: validate request
-    # invalid token
-    # invalid step
-    # invalid post type
     req_json = request.get_json()
+    if req_json is None or 'token' not in req_json:
+        abort(400)
     token = req_json['token']
     client = client_manager.get_client(token)
     if not client:
