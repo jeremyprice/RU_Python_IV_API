@@ -7,29 +7,57 @@
         - python-pip
         - nginx
         - python-dev
+      install_directory: /var/app/py4class
+      runtime_user: www-data
 
     tasks:
-      - name: setup www-data user
-        user: name=www-data state=present
+      - name: setup {{ runtime_user }} user
+        user: name={{ runtime_user }} state=present
 
       - name: install needed packages
-        apt: name={{ item }} state=latest
-        with_items: "{{ packages }}"
-
-      - name: ensure nginx started and boot enabled
-        service: name=nginx state=started enabled=yes
+        apt: name={{ packages }} state=latest
 
       - name: upload python package requirements
-        copy: src=requirements.txt dest=/root/requirements.txt
+        copy: src=requirements.txt dest=/tmp/requirements.txt
 
       - name: install python packages
-        pip: requirements=/root/requirements.txt state=latest
+        pip: requirements=/tmp/requirements.txt state=latest
 
       - name: create deployment directories
-        file: path=/var/app/py4class state=directory owner=www-data
+        file: path={{ install_directory }} state=directory owner={{ runtime_user }}
+
+      - name: create runtime tmp directory
+        file: path=/run/py4class state=directory owner={{ runtime_user }}
 
       - name: clone the repo
         git: repo=git://github.com/jeremyprice/RU_Python_IV_API.git
-             dest=/var/app/py4class
+             dest={{ install_directory }}
         become: yes
-        become_user: www-data
+        become_user: "{{ runtime_user }}"
+        notify: restart app
+
+      - name: install the system files
+        template: src={{ item.src }} dest={{ item.dest }}
+        notify:
+          - reload systemd
+          - restart app
+        with_items:
+          - { src: "systemd.service.j2", dest: "/lib/systemd/system/py4class.service" }
+          - { src: "systemd.socket.j2", dest: "/lib/systemd/system/py4class.socket" }
+          - { src: "tmpfiles.d.conf.j2", dest: "/usr/lib/tmpfiles.d/py4class.conf" }
+
+      - name: ensure nginx and app are started and boot enabled
+        service: name={{ item }} state=started enabled=yes
+        with_items:
+          - nginx
+          - py4class
+
+    handlers:
+      - name: restart app
+        service: name=py4class state=restarted
+
+      - name: restart nginx
+        service: name=nginx state=restarted
+
+      - name: reload systemd
+        command: systemctl daemon-reload
