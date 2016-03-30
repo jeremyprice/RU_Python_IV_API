@@ -23,12 +23,10 @@ class ClientManagerCase(unittest.TestCase):
         self.assertEquals(client, client2)
 
     def test_clean_list(self):
-        import time
         cm = ClientManager()
         client = cm.new_client()
         old_timeout = ActiveClient.CLIENT_TIMEOUT
-        ActiveClient.CLIENT_TIMEOUT = 1
-        time.sleep(1.1)
+        ActiveClient.CLIENT_TIMEOUT = 0
         client = cm.get_client(client.id)
         ActiveClient.CLIENT_TIMEOUT = old_timeout
         self.assertIsNone(client)
@@ -107,11 +105,9 @@ class ActiveClientCase(unittest.TestCase):
         self.assertTrue(ac.is_valid())
 
     def test_timeout(self):
-        import time
         ac = ActiveClient('123')
         old_timeout = ActiveClient.CLIENT_TIMEOUT
-        ActiveClient.CLIENT_TIMEOUT = 1
-        time.sleep(1.1)
+        ActiveClient.CLIENT_TIMEOUT = 0
         self.assertFalse(ac.is_valid())
         with self.assertRaises(InvalidClient):
             ac.get_next_path()
