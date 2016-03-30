@@ -30,13 +30,16 @@ print("My ID is {}".format(token))
 
 # subsequent requests
 done = False
+link_titles = [title]
 while not done:
     print("Accessing {}".format(next_url))
     hit = requests.post(next_url, json={'token': token})
     response = hit.json()
     if 'answer' in response:
-        print(response)
+        print response
+        print 'Link titles: {}'.format(', '.join(link_titles))
         done = True
     else:
         token = response.pop('token')
         title, next_url = response.popitem()
+        link_titles.append(title)
