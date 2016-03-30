@@ -9,6 +9,8 @@
         - python-dev
       install_directory: /var/app/py4class
       runtime_user: www-data
+      gunicorn_sock: /run/py4class/socket
+      listen_port: 80
 
     tasks:
       - name: setup {{ runtime_user }} user
@@ -45,6 +47,28 @@
           - { src: "systemd.service.j2", dest: "/lib/systemd/system/py4class.service" }
           - { src: "systemd.socket.j2", dest: "/lib/systemd/system/py4class.socket" }
           - { src: "tmpfiles.d.conf.j2", dest: "/usr/lib/tmpfiles.d/py4class.conf" }
+
+      - name: install the nginx config file
+        template: src=nginx.j2 dest=/etc/nginx/sites-available/py4class
+        notify: reload nginx
+
+      - name: enable the py4class site config in nginx
+        file: src=/etc/nginx/sites-available/py4class
+              path=/etc/nginx/sites-enabled/py4class state=link
+        notify: reload nginx
+
+      - name: disable the default nginx site config
+        file: path=/etc/nginx/sites-enabled/default state=absent
+        notify: reload nginx
+
+      - name: make sure we don't close OpenSSH ports in the firewall
+        ufw: rule=allow state=enabled name=OpenSSH
+
+      - name: make sure we don't close ssh ports in the firewall
+        ufw: rule=allow state=enabled port=ssh
+
+      - name: poke a hole in the firewall for the nginx server
+        ufw: proto=tcp rule=allow state=enabled to_port={{ listen_port }}
 
       - name: ensure nginx and app are started and boot enabled
         service: name={{ item }} state=started enabled=yes

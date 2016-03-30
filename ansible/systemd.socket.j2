@@ -2,8 +2,8 @@
 Description=py4class gunicorn socket
 
 [Socket]
-ListenStream=/run/py4class/socket
-ListenStream=0.0.0.0:9000
+ListenStream={{ gunicorn_sock }}
+#ListenStream=0.0.0.0:9000
 #ListenStream=[::]:9000
 
 [Install]

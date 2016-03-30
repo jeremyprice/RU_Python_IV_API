@@ -1,0 +1,9 @@
+server {
+    listen {{ listen_port }};
+    server_name {{ ansible_default_ipv4.address }};
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:{{ gunicorn_sock }};
+    }
+}
