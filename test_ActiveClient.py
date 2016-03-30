@@ -98,7 +98,7 @@ class ActiveClientCase(unittest.TestCase):
             title, path = next_path
             paths.append(title)
             next_path = ac.get_next_path(path)
-        self.assertSetEqual(set(paths), set(ActiveClient.LINK_TITLES))
+        self.assertEqual(set(paths), set(ActiveClient.LINK_TITLES))
 
     def test_is_valid(self):
         ac = ActiveClient('123')
@@ -116,6 +116,15 @@ class ActiveClientCase(unittest.TestCase):
         with self.assertRaises(InvalidClient):
             ac.validate_path('123')
         ActiveClient.CLIENT_TIMEOUT = old_timeout
+
+    def test_random_link_titles(self):
+        # note: these could fail if we randomize and it comes back with the
+        # original list sequence
+        ac1 = ActiveClient('123')
+        ac2 = ActiveClient('456')
+        self.assertNotEqual(ac1.my_titles, ac2.my_titles)
+        self.assertNotEqual(ac1.my_titles, ActiveClient.LINK_TITLES)
+        self.assertNotEqual(ac2.my_titles, ActiveClient.LINK_TITLES)
 
 if __name__ == '__main__':
     unittest.main()

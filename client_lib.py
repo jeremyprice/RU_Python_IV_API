@@ -1,4 +1,5 @@
 import datetime
+import random
 from utils import generate_id
 
 
@@ -8,7 +9,7 @@ class InvalidClient(Exception):
 
 class ActiveClient(object):
 
-    CLIENT_TIMEOUT = 60  # seconds
+    CLIENT_TIMEOUT = 5  # seconds
     LINK_TITLES = ['first_link', 'next_url', 'url_no_2',
                    'almost_there', 'penultimate']
 
@@ -17,6 +18,8 @@ class ActiveClient(object):
         self.path_map = {}
         self.path_index = [generate_id()]
         self.creation_time = datetime.datetime.now()
+        self.my_titles = ActiveClient.LINK_TITLES[:]
+        random.shuffle(self.my_titles)
 
     @property
     def id(self):
@@ -26,17 +29,17 @@ class ActiveClient(object):
         if not self.is_valid():
             raise InvalidClient()
         if from_path is None:
-            return (ActiveClient.LINK_TITLES[0], self.path_index[0])
+            return (self.my_titles[0], self.path_index[0])
         if from_path in self.path_map:
             index = self.path_index.index(from_path)
-            title = ActiveClient.LINK_TITLES[index]
+            title = self.my_titles[index]
             return (title, self.path_map[from_path])
-        if len(self.path_index) < len(ActiveClient.LINK_TITLES):
+        if len(self.path_index) < len(self.my_titles):
             new_path = generate_id()
             self.path_map[from_path] = new_path
             self.path_index.append(new_path)
             index = len(self.path_index) - 1
-            title = ActiveClient.LINK_TITLES[index]
+            title = self.my_titles[index]
             return (title, new_path)
         # if we get here we have exhausted all the links
         return None
