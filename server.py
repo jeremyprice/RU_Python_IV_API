@@ -1,11 +1,11 @@
 #!/usr/bin/env python2
 
 from flask import Flask, url_for, jsonify, request, abort
-from client_lib import ClientManager
+from client_lib import RedisClientManager
 
 
 app = Flask(__name__)
-client_manager = ClientManager()
+client_manager = RedisClientManager()
 
 
 @app.route('/', methods=['GET'])
@@ -38,4 +38,4 @@ def step(step_id):
     return jsonify(**outgoing)
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
