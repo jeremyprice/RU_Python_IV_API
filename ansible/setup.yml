@@ -7,6 +7,8 @@
         - python-pip
         - nginx
         - python-dev
+        - redis-server
+        - redis-tools
       install_directory: /var/app/py4class
       runtime_user: www-data
       gunicorn_sock: /run/py4class/socket
@@ -36,12 +38,15 @@
              dest={{ install_directory }}
         become: yes
         become_user: "{{ runtime_user }}"
-        notify: restart app
+        notify:
+          - restart redis
+          - restart app
 
       - name: install the system files
         template: src={{ item.src }} dest={{ item.dest }}
         notify:
           - reload systemd
+          - restart redis
           - restart app
         with_items:
           - { src: "systemd.service.j2", dest: "/lib/systemd/system/py4class.service" }
@@ -70,18 +75,22 @@
       - name: poke a hole in the firewall for the nginx server
         ufw: proto=tcp rule=allow state=enabled to_port={{ listen_port }}
 
-      - name: ensure nginx and app are started and boot enabled
+      - name: ensure nginx, redis, and app are started and boot enabled
         service: name={{ item }} state=started enabled=yes
         with_items:
           - nginx
           - py4class
+          - redis-server
 
     handlers:
+      - name: reload systemd
+        command: systemctl daemon-reload
+
+      - name: reload redis
+        service: name=redis state=restarted
+
       - name: restart app
         service: name=py4class state=restarted
 
       - name: restart nginx
         service: name=nginx state=restarted
-
-      - name: reload systemd
-        command: systemctl daemon-reload

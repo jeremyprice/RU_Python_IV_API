@@ -2,6 +2,7 @@
 
 import requests
 import logging
+import sys
 
 
 def debug_mode():
@@ -19,7 +20,10 @@ def debug_mode():
 
 
 # debug_mode()
-url = "http://localhost:5000/"  # TODO: pull this in from command line
+if len(sys.argv) > 1:
+    url = sys.argv[1]
+else:
+    url = "http://localhost:5000/"
 
 # first request
 first_hit = requests.get(url)
