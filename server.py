@@ -38,4 +38,4 @@ def step(step_id):
     return jsonify(**outgoing)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()

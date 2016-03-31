@@ -92,8 +92,8 @@ class RedisActiveClient(ActiveClient):
         [pipe.hset(self.next_path_key, k, v) for k, v in self.next_path_map.items()]
         [pipe.hset(self.title_map_key, k, v) for k, v in self.path_map.items()]
         # TODO: reenable these after testing
-        # pipe.expire(self.next_path_key, ActiveClient.CLIENT_TIMEOUT)
-        # pipe.expire(self.title_map_key, ActiveClient.CLIENT_TIMEOUT)
+        pipe.expire(self.next_path_key, ActiveClient.CLIENT_TIMEOUT)
+        pipe.expire(self.title_map_key, ActiveClient.CLIENT_TIMEOUT)
         pipe.execute()
 
     def _generate_all_paths(self):
