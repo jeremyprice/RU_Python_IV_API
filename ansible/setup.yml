@@ -67,10 +67,10 @@
         notify: reload nginx
 
       - name: make sure we don't close OpenSSH ports in the firewall
-        ufw: rule=allow state=enabled name=OpenSSH
+        ufw: rule=limit state=enabled name=OpenSSH
 
       - name: make sure we don't close ssh ports in the firewall
-        ufw: rule=allow state=enabled port=ssh
+        ufw: rule=limit state=enabled port=ssh
 
       - name: poke a hole in the firewall for the nginx server
         ufw: proto=tcp rule=allow state=enabled to_port={{ listen_port }}

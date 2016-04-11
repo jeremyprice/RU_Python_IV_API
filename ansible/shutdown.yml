@@ -1,0 +1,23 @@
+---
+  - name: Shutdown services after class
+    hosts: py4class
+
+    vars:
+      listen_port: 80
+
+    tasks:
+      - name: make sure we don't close OpenSSH ports in the firewall
+        ufw: rule=limit state=enabled name=OpenSSH
+
+      - name: make sure we don't close ssh ports in the firewall
+        ufw: rule=limit state=enabled port=ssh
+
+      - name: close the hole in the firewall for the nginx server
+        ufw: proto=tcp rule=allow state=enabled to_port={{ listen_port }} delete=yes
+
+      - name: ensure services are stopped and boot disabled
+        service: name={{ item }} state=stopped enabled=no
+        with_items:
+          - nginx
+          - py4class
+          - redis-server
