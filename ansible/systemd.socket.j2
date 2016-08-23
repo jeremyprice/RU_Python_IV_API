@@ -3,7 +3,7 @@ Description=py4class gunicorn socket
 
 [Socket]
 ListenStream={{ gunicorn_sock }}
-#ListenStream=0.0.0.0:9000
+ListenStream=127.0.0.1:{{ gunicorn_port }}
 #ListenStream=[::]:9000
 
 [Install]

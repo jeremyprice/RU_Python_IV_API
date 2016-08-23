@@ -9,9 +9,11 @@
         - python-dev
         - redis-server
         - redis-tools
+        - git-all
       install_directory: /var/app/py4class
       runtime_user: www-data
       gunicorn_sock: /run/py4class/socket
+      gunicorn_port: 9000
       listen_port: 80
 
     tasks:
@@ -55,16 +57,16 @@
 
       - name: install the nginx config file
         template: src=nginx.j2 dest=/etc/nginx/sites-available/py4class
-        notify: reload nginx
+        notify: restart nginx
 
       - name: enable the py4class site config in nginx
         file: src=/etc/nginx/sites-available/py4class
               path=/etc/nginx/sites-enabled/py4class state=link
-        notify: reload nginx
+        notify: restart nginx
 
       - name: disable the default nginx site config
         file: path=/etc/nginx/sites-enabled/default state=absent
-        notify: reload nginx
+        notify: restart nginx
 
       - name: make sure we don't close OpenSSH ports in the firewall
         ufw: rule=limit state=enabled name=OpenSSH
@@ -86,7 +88,7 @@
       - name: reload systemd
         command: systemctl daemon-reload
 
-      - name: reload redis
+      - name: restart redis
         service: name=redis state=restarted
 
       - name: restart app
