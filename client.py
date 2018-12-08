@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 
+from __future__ import print_function
 import requests
 import logging
 import sys
@@ -40,8 +41,8 @@ while not done:
     hit = requests.post(next_url, json={'token': token})
     response = hit.json()
     if 'answer' in response:
-        print response
-        print 'Link titles: {}'.format(', '.join(link_titles))
+        print(response)
+        print('Link titles: {}'.format(', '.join(link_titles)))
         done = True
     else:
         token = response.pop('token')
