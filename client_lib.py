@@ -78,8 +78,8 @@ class RedisActiveClient(ActiveClient):
 
     def _new_client(self):
         paths, self.path_map = self._generate_all_paths()
-        self.next_path_map = {paths[i]: paths[i+1] for i in xrange(len(paths)-1)}
-        self.next_path_map[None] = paths[0]
+        self.next_path_map = {paths[i]: paths[i+1] for i in range(len(paths)-1)}
+        self.next_path_map['start'] = paths[0]
 
     def _load_from_redis(self):
         self.path_map = self.redis.hgetall(self.title_map_key)
@@ -97,15 +97,17 @@ class RedisActiveClient(ActiveClient):
         pipe.execute()
 
     def _generate_all_paths(self):
-        paths = [generate_id() for i in xrange(len(self.my_titles))]
+        paths = [generate_id() for i in range(len(self.my_titles))]
         path_map = dict(zip(paths, self.my_titles))
         return (paths, path_map)
 
     def get_next_path(self, from_path=None):
+        if from_path is None:
+            from_path = 'start'
         next_path = self.redis.hget(self.next_path_key, from_path)
-        if next_path is None:
+        if next_path == None:
             return None
-        title = self.redis.hget(self.title_map_key, next_path)
+        title = self.redis.hget(self.title_map_key, next_path).decode()
         return (title, next_path)
 
     def is_valid(self):
