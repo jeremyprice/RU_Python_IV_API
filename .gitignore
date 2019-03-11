@@ -1,2 +1,3 @@
 *.pyc
 ansible/hosts
+logs/
