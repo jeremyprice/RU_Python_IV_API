@@ -7,6 +7,10 @@ from client_lib import RedisClientManager
 app = Flask(__name__)
 client_manager = RedisClientManager()
 
+@app.after_request
+def add_header(response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
 
 @app.route('/', methods=['GET'])
 def root():
