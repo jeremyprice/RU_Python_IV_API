@@ -9,6 +9,7 @@ from logging.handlers import RotatingFileHandler
 app = Flask(__name__)
 client_manager = RedisClientManager()
 
+
 class CustomFormatter(logging.Formatter):
     def format(self, record):
         if has_request_context():
@@ -20,11 +21,19 @@ class CustomFormatter(logging.Formatter):
             record.data = request.get_data(as_text=True)
         return super(CustomFormatter, self).format(record)
 
+
 handler = RotatingFileHandler('logs/app.log', maxBytes=10*1024*1024, backupCount=20)
 handler.setLevel(logging.INFO)
 custom_format = '''%(levelname)s %(name)s %(path)s %(endpoint)s %(remote_addr)s %(access_route)s %(message)s\n%(headers)s\n%(data)s\n *******'''
 handler.setFormatter(CustomFormatter(fmt=custom_format))
 app.logger.addHandler(handler)
+
+
+@app.after_request
+def add_header(response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
+
 
 @app.route('/', methods=['GET'])
 def root():
@@ -58,6 +67,7 @@ def step(step_id):
     else:  # no path left, they are at the end!
         outgoing = {'answer': 42, 'greeting': 'So long, and thanks for all the fish!'}
     return jsonify(**outgoing)
+
 
 if __name__ == '__main__':
     app.run()
