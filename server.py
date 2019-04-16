@@ -24,7 +24,7 @@ class CustomFormatter(logging.Formatter):
 
 handler = RotatingFileHandler('logs/app.log', maxBytes=10*1024*1024, backupCount=20)
 handler.setLevel(logging.INFO)
-custom_format = '''%(levelname)s %(name)s %(path)s %(endpoint)s %(remote_addr)s %(access_route)s %(message)s\n%(headers)s\n%(data)s\n *******'''
+custom_format = '''%(levelname)s %(name)s %(path)s %(endpoint)s %(remote_addr)s %(access_route)s %(message)s\n%(headers)s\n%(data)s\n *******'''  # noqa E105
 handler.setFormatter(CustomFormatter(fmt=custom_format))
 app.logger.addHandler(handler)
 
@@ -35,9 +35,20 @@ def add_header(response):
     return response
 
 
+@app.route('/advanced', methods=['GET'])
+def advanced():
+    client = client_manager.new_client()
+    title, path = client.get_next_path()
+    next_url = url_for('step', step_id=path,
+                       _external=True)
+    app.logger.warning('client id {}'.format(client.id))
+    output = {title: next_url, 'token': client.id}
+    return jsonify(**output)
+
+
 @app.route('/', methods=['GET'])
 def root():
-    client = client_manager.new_client()
+    client = client_manager.new_client(easy=True)
     title, path = client.get_next_path()
     next_url = url_for('step', step_id=path,
                        _external=True)

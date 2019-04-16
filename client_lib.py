@@ -13,13 +13,17 @@ class ActiveClient(object):
     CLIENT_TIMEOUT = 5  # seconds
     LINK_TITLES = ['first_link', 'next_url', 'url_no_2',
                    'almost_there', 'penultimate']
+    EASY_LINK_TITLES = ['next'] * 10
 
-    def __init__(self, my_id):
+    def __init__(self, my_id, easy=False):
         self.my_id = my_id
         self.path_map = {}
         self.path_index = [generate_id()]
         self.creation_time = datetime.datetime.now()
-        self.my_titles = ActiveClient.LINK_TITLES[:]
+        if easy:
+            self.my_titles = ActiveClient.EASY_LINK_TITLES[:]
+        else:
+            self.my_titles = ActiveClient.LINK_TITLES[:]
         random.shuffle(self.my_titles)
 
     @property
@@ -65,8 +69,8 @@ class ActiveClient(object):
 
 
 class RedisActiveClient(ActiveClient):
-    def __init__(self, my_id, redis_i, load=False):
-        super(RedisActiveClient, self).__init__(my_id)
+    def __init__(self, my_id, redis_i, easy=False, load=False):
+        super(RedisActiveClient, self).__init__(my_id, easy=easy)
         self.redis = redis_i
         self.next_path_key = 'next_{}'.format(my_id)
         self.title_map_key = 'title_map_{}'.format(my_id)
@@ -105,7 +109,7 @@ class RedisActiveClient(ActiveClient):
         if from_path is None:
             from_path = 'start'
         next_path = self.redis.hget(self.next_path_key, from_path)
-        if next_path == None:
+        if next_path is None:
             return None
         title = self.redis.hget(self.title_map_key, next_path).decode()
         return (title, next_path)
@@ -118,11 +122,11 @@ class ClientManager(object):
     def __init__(self):
         self.clients = {}
 
-    def new_client(self):
+    def new_client(self, easy=False):
         '''Create a new client and add it to the managed list'''
         self._clean_list()
         cl_id = generate_id()
-        nc = ActiveClient(cl_id)
+        nc = ActiveClient(cl_id, easy=easy)
         self.clients[cl_id] = nc
         return nc
 
@@ -148,8 +152,8 @@ class RedisClientManager(ClientManager):
         super(RedisClientManager, self).__init__()
         self.redis = redis.StrictRedis()  # defaults to localhost:6379
 
-    def new_client(self):
-        return RedisActiveClient(generate_id(), self.redis)
+    def new_client(self, easy=False):
+        return RedisActiveClient(generate_id(), self.redis, easy=easy)
 
     def get_client(self, client_id):
         try:
