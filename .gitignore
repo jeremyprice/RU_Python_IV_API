@@ -1,3 +1,5 @@
 *.pyc
 ansible/hosts
 logs/
+.venv/
+ansible/setup.retry

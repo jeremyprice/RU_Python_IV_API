@@ -11,6 +11,7 @@
         - redis-tools
         - git-all
       install_directory: /var/app/py4class
+      log_directory: /var/app/py4class/logs
       runtime_user: www-data
       gunicorn_sock: /run/py4class/socket
       gunicorn_port: 9000
@@ -31,6 +32,9 @@
 
       - name: create deployment directories
         file: path={{ install_directory }} state=directory owner={{ runtime_user }}
+
+      - name: create log directory
+        file: path={{ log_directory }} state=directory owner={{ runtime_user }}
 
       - name: create runtime tmp directory
         file: path=/run/py4class state=directory owner={{ runtime_user }}
