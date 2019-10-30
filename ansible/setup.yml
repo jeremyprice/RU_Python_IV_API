@@ -15,7 +15,7 @@
       runtime_user: www-data
       gunicorn_sock: /run/py4class/socket
       gunicorn_port: 9000
-      listen_port: 80
+      listen_port: "80"
 
     tasks:
       - name: setup {{ runtime_user }} user
@@ -30,12 +30,6 @@
       - name: install python packages
         pip: requirements=/tmp/requirements.txt state=latest
 
-      - name: create deployment directories
-        file: path={{ install_directory }} state=directory owner={{ runtime_user }}
-
-      - name: create log directory
-        file: path={{ log_directory }} state=directory owner={{ runtime_user }}
-
       - name: create runtime tmp directory
         file: path=/run/py4class state=directory owner={{ runtime_user }}
 
@@ -47,6 +41,12 @@
         notify:
           - restart redis
           - restart app
+
+      - name: create deployment directories
+        file: path={{ install_directory }} state=directory owner={{ runtime_user }}
+
+      - name: create log directory
+        file: path={{ log_directory }} state=directory owner={{ runtime_user }}
 
       - name: install the system files
         template: src={{ item.src }} dest={{ item.dest }}
