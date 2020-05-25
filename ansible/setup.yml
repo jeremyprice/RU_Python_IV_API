@@ -10,6 +10,7 @@
         - redis-server
         - redis-tools
         - git-all
+      base_directory: /var/app
       install_directory: /var/app/py4class
       log_directory: /var/app/py4class/logs
       runtime_user: www-data
@@ -29,6 +30,9 @@
 
       - name: install python packages
         pip: requirements=/tmp/requirements.txt state=latest
+
+      - name: create base directory
+        file: path={{ base_directory }} state=directory owner={{ runtime_user }}
 
       - name: create runtime tmp directory
         file: path=/run/py4class state=directory owner={{ runtime_user }}
