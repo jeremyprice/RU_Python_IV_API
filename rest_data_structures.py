@@ -44,3 +44,17 @@ class Car(RDS):
                 'Name': 'The human-friendly name for this car',
                 'Color': 'The color of the car',
                 'PrimaryDriver': 'The name of the person who primarily drives this car'}
+
+class Appliance(RDS):
+    def __init__(self, Make=None, Model=None, Location=None, Color=None, Type=None,
+                 Year=None, other=None):
+        super(Car, self).__init__(Make=Make, Model=Model, Type=Type,
+                                  Location=Location, Color=Color, Year=Year, other=other)
+
+    def help(self):
+        return {'Make': 'The make (manufacturer) of the appliance',
+                'Model': 'The model of the appliance',
+                'Year': 'The year the appliance was purchased',
+                'Location': 'The location this appliance lives at',
+                'Color': 'The color of the appliance',
+                'Type': 'The type of the appliance (i.e. toaster, oven, fridge)'}

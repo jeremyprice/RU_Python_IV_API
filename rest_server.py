@@ -94,6 +94,24 @@ class RedisClient(object):
         self.redis.hset(item_key, mapping=item.get_mapping())
 
 
+def handle_collection(token, collection_pre, singular_pre, data_structure):
+    rclient = RedisClient()
+    if request.method == 'GET':
+        # return the list of this item
+        output = {collection_pre: rclient.get_item_list(valid_token, collection_pre)}
+    elif request.method == 'POST':
+        # create a new item
+        req_item = request.get_json()
+        new_item = data_structure()
+        if new_item.create(req_item):
+            # has all the fields we need
+            item_id = rclient.create_item(valid_token, collection_pre, new_item)
+            output = {singular_pre: item_id}
+        else:
+            # does not have the required fields
+            app.logger.warning('Tried to create a {} with bad params: {}'.format(singular_pre, req_item))
+            abort(400)
+
 @app.after_request
 def add_header(response):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -142,23 +160,7 @@ def get_token():
 @validate_token
 def cars(valid_token=False):
     if valid_token:
-        # send the info for this token
-        rclient = RedisClient()
-        if request.method == 'GET':
-            # return the list of this item
-            output = {'cars': rclient.get_item_list(valid_token, 'cars')}
-        elif request.method == 'POST':
-            # create a new item
-            req_item = request.get_json()
-            new_item = Car()
-            if new_item.create(req_item):
-                # has all the fields we need
-                item_id = rclient.create_item(valid_token, 'cars', new_item)
-                output = {'car': item_id}
-            else:
-                # does not have the required fields
-                app.logger.warning('Tried to create a Car with bad params: {}'.format(req_item))
-                abort(400)
+        handle_collection(valid_token, 'cars', 'car', Car)
     else:
         # send the usage info
         output = {'usage': 'send your token in as the value with the key "X-Auth-Token" in the request headers'}
