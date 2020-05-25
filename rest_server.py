@@ -45,6 +45,8 @@ def validate_token(func):
             return func(*args, valid_token=token, **kwargs)
         else:
             return func(*args, valid_token=False, **kwargs)
+    # change the name so Flask doesn't complain
+    inner.__name__ = 'inner_{}'.format(func.__name__)
     return inner
 
 
@@ -62,6 +64,10 @@ class RedisClient(object):
         key = '{}-list-{}'.format(type, token)
         return [m.decode() for m in self.redis.smembers(key)]
 
+    def item_in_list(self, token, type, item_id):
+        key = '{}-list-{}'.format(type, token)
+        return self.redis.sismember(key, item_id)
+
     def create_item(self, token, type, item):
         # create the item in redis
         item_id = generate_id()
@@ -69,8 +75,16 @@ class RedisClient(object):
         self.redis.hset(item_key, mapping=item.get_mapping())
         # add the item to the list
         list_key = '{}-list-{}'.format(type, token)
-        self.redis.sadd(list_key, item_key)
+        self.redis.sadd(list_key, item_id)
         return item_id
+
+    def get_item(self, type, item_id):
+        item_key = '{}-{}'.format(type, item_id)
+        return {k.decode(): v.decode() for k, v in self.redis.hgetall(item_key).items()}
+
+    def update_item(self, type, item_id, item):
+        item_key = '{}-{}'.format(type, item_id)
+        self.redis.hset(item_key, mapping=item.get_mapping())
 
 
 @app.after_request
@@ -96,8 +110,7 @@ def get_token():
     rclient.init_new_token(new_token)
     return jsonify({'X-Auth-Token': new_token})
 
-
-@app.route('/cars', methods=['GET', 'POST'])
+@app.route('/cars', methods=['GET', 'POST', 'PUT'])
 @validate_token
 def cars(valid_token=False):
     if valid_token:
@@ -118,11 +131,73 @@ def cars(valid_token=False):
                 # does not have the required fields
                 app.logger.warning('Tried to create a Car with bad params: {}'.format(req_item))
                 abort(400)
+        elif request.method == 'PUT':
+            # update the item
+            req_item = request.get_json()
+            if 'car' not in req_item:
+                app.logger.warning('Did not get the car id {}'.format(req_item))
+                abort(400)
+            item_id = req_item['car']
+            existing_item = rclient.get_item('car', item_id)
+            car = Car()
+            car.create(existing_item)
+            car.update(req_item)
+            rclient.update_item('car', item_id)
+            output = dict(car=item_id, **car.get_mapping())
     else:
         # send the usage info
         output = {'usage': 'send your token in as the value with the key "X-Auth-Token" in the request headers'}
-    print(output)
     return jsonify(**output)
+
+
+@app.route('/cars/<car_id>', methods=['GET', 'PUT', 'DELETE'])
+@validate_token
+def car(car_id=None, valid_token=False):
+    # TODO: validate the car_id
+    if valid_token:
+        # send the info for this token
+        rclient = RedisClient()
+        if request.method == 'GET':
+            # TODO: validate the request items - make sure we have what we need
+            # return the car if this car is associated with this token
+            if rclient.item_in_list(valid_token, 'cars', car_id):
+                # this token owns the item entry
+                item = rclient.get_item('cars', car_id)
+                output = dict(car=car_id, **item)
+            else:
+                # invalid id
+                app.logger.warning('Invalid car id {}'.format(item_id))
+                abort(400)
+        elif request.method == 'DELETE':
+            # create a new item
+            req_item = request.get_json()
+            new_item = Car()
+            if new_item.create(req_item):
+                # has all the fields we need
+                item_id = rclient.create_item(valid_token, 'cars', new_item)
+                output = {'car': item_id}
+            else:
+                # does not have the required fields
+                app.logger.warning('Tried to create a Car with bad params: {}'.format(req_item))
+                abort(400)
+        elif request.method == 'PUT':
+            # update the item
+            req_item = request.get_json()
+            if 'car' not in req_item:
+                app.logger.warning('Did not get the car id {}'.format(req_item))
+                abort(400)
+            item_id = req_item['car']
+            existing_item = rclient.get_item('car', item_id)
+            car = Car()
+            car.create(existing_item)
+            car.update(req_item)
+            rclient.update_item('car', item_id)
+            output = dict(car=item_id, **car.get_mapping())
+    else:
+        # invalid token - send the usage info
+        output = {'usage': 'send your token in as the value with the key "X-Auth-Token" in the request headers'}
+    return jsonify(**output)
+
 
 if __name__ == '__main__':
     setup_logging()

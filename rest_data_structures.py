@@ -24,3 +24,8 @@ class Car(object):
             return True
         else:
             return False
+
+    def update(self, other):
+        for k in other:
+            if k in self.info:
+                self.info[k] = other[k]

@@ -11,6 +11,7 @@ cars_url = urljoin(base_url, '/cars')
 my_token = requests.get(get_token_url).json()['X-Auth-Token']
 print(my_token)
 headers = {'X-Auth-Token':my_token}
+# test the GETs on /cars
 print(requests.get(cars_url, headers=headers).json())
 print(requests.get(cars_url).json())
 new_car = {'Name': 'Blue flash',
@@ -19,6 +20,10 @@ new_car = {'Name': 'Blue flash',
            'Year': '2012',
            'PrimaryDriver': 'Jeremy',
            'Color': 'Blue'}
-car_id = requests.post(cars_url, headers={'X-Auth-Token':my_token}, json=new_car).json()['car']
+car_id = requests.post(cars_url, headers=headers, json=new_car).json()['car']
 print(car_id)
 print(requests.get(cars_url, headers=headers).json())
+# test the GET on the /cars/<id>
+car_url = '/'.join([cars_url,car_id])
+car_info = requests.get(car_url, headers=headers).json()
+print(car_info)
