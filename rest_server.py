@@ -179,16 +179,12 @@ def car(car_id=None, valid_token=False):
         elif request.method == 'PUT':
             # update the item
             req_item = request.get_json()
-            if 'car' not in req_item:
-                app.logger.warning('Did not get the car id {}'.format(req_item))
-                abort(400)
-            item_id = req_item['car']
-            existing_item = rclient.get_item('car', item_id)
+            existing_item = rclient.get_item('car', car_id)
             car = Car()
             car.create(existing_item)
             car.update(req_item)
-            rclient.update_item('car', item_id)
-            output = dict(car=item_id, **car.get_mapping())
+            rclient.update_item('car', car_id, car)
+            output = dict(car=car_id, **car.get_mapping())
     else:
         # invalid token - send the usage info
         output = {'usage': 'send your token in as the value with the key "X-Auth-Token" in the request headers'}

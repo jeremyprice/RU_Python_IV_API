@@ -27,5 +27,10 @@ print(requests.get(cars_url, headers=headers).json())
 car_url = '/'.join([cars_url,car_id])
 car_info = requests.get(car_url, headers=headers).json()
 print(car_info)
+# test the PUT on /cars/<id>
+car_info['Make'] = 'Ford'
+car_info['Year'] = '1999'
+new_car_info = requests.put(car_url, headers=headers, json=car_info).json()
+print(new_car_info)
 # test the DELETE on /cars/<id>
 print(requests.delete(car_url, headers=headers).json())
