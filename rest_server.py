@@ -105,8 +105,28 @@ def root():
     output = {'/': 'rules, routes, and description',
               '/get_token': 'get an X-Auth-Token to start adding things',
               '/cars': 'a collection of the cars - send your key to get the cars for that key',
+              '/formats/car': 'the expected keys for a car object',
               '/appliances': 'a collection of the appliances - send your key to get the appliances for that key',
-              '/pantry': 'a collection of the items in the pantry - send your key to get the items for that key'}
+              '/formats/appliance': 'the expected keys for an appliance object',
+              '/pantry': 'a collection of the items in the pantry - send your key to get the items for that key',
+              '/formats/pantry': 'the expected keys for a pantry object',
+              '/formats': 'all the expected keys for each of the items in the collections'}
+    return jsonify(**output)
+
+
+@app.route('/formats', methods=['GET'])
+@app.route('/formats/<format>', methods=['GET'])
+def formats(format=None):
+    if format == 'car':
+        output = Car().help()
+    elif format == 'appliance':
+        output = {'error': 'not implemented yet'}
+    elif format == 'pantry':
+        output = {'error': 'not implemented yet'}
+    elif format == None:
+        output = {'car':Car().help()}
+    else:
+        output = {'error': 'invalid format requested: {}'.format(format)}
     return jsonify(**output)
 
 
@@ -116,6 +136,7 @@ def get_token():
     new_token = generate_id()
     rclient.init_new_token(new_token)
     return jsonify({'X-Auth-Token': new_token})
+
 
 @app.route('/cars', methods=['GET', 'POST', 'PUT'])
 @validate_token
@@ -138,19 +159,6 @@ def cars(valid_token=False):
                 # does not have the required fields
                 app.logger.warning('Tried to create a Car with bad params: {}'.format(req_item))
                 abort(400)
-        elif request.method == 'PUT':
-            # update the item
-            req_item = request.get_json()
-            if 'car' not in req_item:
-                app.logger.warning('Did not get the car id {}'.format(req_item))
-                abort(400)
-            item_id = req_item['car']
-            existing_item = rclient.get_item('car', item_id)
-            car = Car()
-            car.create(existing_item)
-            car.update(req_item)
-            rclient.update_item('car', item_id)
-            output = dict(car=item_id, **car.get_mapping())
     else:
         # send the usage info
         output = {'usage': 'send your token in as the value with the key "X-Auth-Token" in the request headers'}
@@ -160,7 +168,6 @@ def cars(valid_token=False):
 @app.route('/cars/<car_id>', methods=['GET', 'PUT', 'DELETE'])
 @validate_token
 def car(car_id=None, valid_token=False):
-    # TODO: validate the car_id
     if valid_token:
         # send the info for this token
         rclient = RedisClient()
@@ -180,8 +187,7 @@ def car(car_id=None, valid_token=False):
             # update the item
             req_item = request.get_json()
             existing_item = rclient.get_item('car', car_id)
-            car = Car()
-            car.create(existing_item)
+            car = Car(other=existing_item)
             car.update(req_item)
             rclient.update_item('car', car_id, car)
             output = dict(car=car_id, **car.get_mapping())

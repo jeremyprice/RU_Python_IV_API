@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-class Car(object):
-    def __init__(self, Make=None, Model=None, PrimaryDriver=None, Name=None, Color=None, Year=None):
-        self.info = {'Make': Make,
-                     'Model': Model,
-                     'Year': Year,
-                     'Color': Color,
-                     'PrimaryDriver': PrimaryDriver,
-                     'Name': Name}
+
+class RDS(object):
+    '''Base class for all REST Data Structures'''
+    def __init__(self, *args, **kwargs):
+        self.info = {k: v for k,v in kwargs.items() if k[0].isupper()}
+
+        if 'other' in kwargs and kwargs['other']:
+            self.update(other)
 
     def get_mapping(self):
         return self.info
@@ -29,3 +29,18 @@ class Car(object):
         for k in other:
             if k in self.info:
                 self.info[k] = other[k]
+
+
+class Car(RDS):
+    def __init__(self, Make=None, Model=None, PrimaryDriver=None, Name=None, Color=None,
+                 Year=None, other=None):
+        super(Car, self).__init__(Make=Make, Model=Model, PrimaryDriver=PrimaryDriver,
+                                  Name=Name, Color=Color, Year=Year, other=other)
+
+    def help(self):
+        return {'Make': 'The make (manufacturer) of the car',
+                'Model': 'The model of the car',
+                'Year': 'The year the car was manufactured',
+                'Name': 'The human-friendly name for this car',
+                'Color': 'The color of the car',
+                'PrimaryDriver': 'The name of the person who primarily drives this car'}

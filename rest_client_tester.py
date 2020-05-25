@@ -7,6 +7,12 @@ from urllib.parse import urljoin
 base_url = sys.argv[1]
 get_token_url = urljoin(base_url, '/get_token')
 cars_url = urljoin(base_url, '/cars')
+format_url = urljoin(base_url, '/formats')
+
+# test the format urls
+print(requests.get(format_url).json())
+for format in ['car', 'appliance', 'pantry']:
+    print(requests.get('/'.join([format_url, format])).json())
 
 my_token = requests.get(get_token_url).json()['X-Auth-Token']
 print(my_token)
