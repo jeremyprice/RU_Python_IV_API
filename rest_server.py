@@ -78,6 +78,13 @@ class RedisClient(object):
         self.redis.sadd(list_key, item_id)
         return item_id
 
+    def delete_item(self, token, type, item_id):
+        item_key = '{}-{}'.format(type, item_id)
+        self.redis.delete(item_key)
+        # add the item to the list
+        list_key = '{}-list-{}'.format(type, token)
+        self.redis.srem(list_key, item_id)
+
     def get_item(self, type, item_id):
         item_key = '{}-{}'.format(type, item_id)
         return {k.decode(): v.decode() for k, v in self.redis.hgetall(item_key).items()}
@@ -157,29 +164,18 @@ def car(car_id=None, valid_token=False):
     if valid_token:
         # send the info for this token
         rclient = RedisClient()
+        if not rclient.item_in_list(valid_token, 'cars', car_id):
+            # this id does not exist - return an error
+            app.logger.warning('Invalid car id {}'.format(car_id))
+            abort(400)
         if request.method == 'GET':
-            # TODO: validate the request items - make sure we have what we need
-            # return the car if this car is associated with this token
-            if rclient.item_in_list(valid_token, 'cars', car_id):
-                # this token owns the item entry
-                item = rclient.get_item('cars', car_id)
-                output = dict(car=car_id, **item)
-            else:
-                # invalid id
-                app.logger.warning('Invalid car id {}'.format(item_id))
-                abort(400)
+            # return the info for this car
+            item = rclient.get_item('cars', car_id)
+            output = dict(car=car_id, **item)
         elif request.method == 'DELETE':
-            # create a new item
-            req_item = request.get_json()
-            new_item = Car()
-            if new_item.create(req_item):
-                # has all the fields we need
-                item_id = rclient.create_item(valid_token, 'cars', new_item)
-                output = {'car': item_id}
-            else:
-                # does not have the required fields
-                app.logger.warning('Tried to create a Car with bad params: {}'.format(req_item))
-                abort(400)
+            # delete the given car
+            rclient.delete_item(valid_token, 'cars', car_id)
+            output = {'result': 'success'}
         elif request.method == 'PUT':
             # update the item
             req_item = request.get_json()
