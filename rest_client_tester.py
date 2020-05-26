@@ -50,5 +50,22 @@ new_car = {'Name': 'Blue flash',
            'Color': 'Blue'}
 put_car = {'Make': 'Ford',
            'Year': '1999'}
-
 test_collection(cars_url, new_car, put_car, headers, 'car')
+
+new_appliance = {'Make': 'LG',
+                 'Model': 'LG01822',
+                 'Year': '2010',
+                 'Location': 'Kitchen',
+                 'Color': 'Stainless',
+                 'Type': 'Dishwasher'}
+put_appliance = {'Model': 'HP1',
+                 'Year': '2015'}
+test_collection(appliances_url, new_appliance, put_appliance, headers, 'appliance')
+
+new_pantry = {'Name': 'Oatmeal',
+              'Quantity': '24',
+              'Measure': 'single-serve packet',
+              'ExpirationDate': '05/05/25'}
+put_pantry = {'Quantity': '48',
+              'ExpirationDate': '05/05/27'}
+test_collection(pantry_url, new_pantry, put_pantry, headers, 'pantry_item')

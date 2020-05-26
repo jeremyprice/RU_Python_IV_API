@@ -48,8 +48,8 @@ class Car(RDS):
 class Appliance(RDS):
     def __init__(self, Make=None, Model=None, Location=None, Color=None, Type=None,
                  Year=None, other=None):
-        super(Car, self).__init__(Make=Make, Model=Model, Type=Type,
-                                  Location=Location, Color=Color, Year=Year, other=other)
+        super(Appliance, self).__init__(Make=Make, Model=Model, Type=Type,
+                                        Location=Location, Color=Color, Year=Year, other=other)
 
     def help(self):
         return {'Make': 'The make (manufacturer) of the appliance',
@@ -62,8 +62,8 @@ class Appliance(RDS):
 
 class Pantry(RDS):
     def __init__(self, Name=None, Quantity=None, Measure=None, ExpirationDate=None, other=None):
-        super(Car, self).__init__(Name=Name, Quantity=Quantity, Measure=Measure,
-                                  ExpirationDate=ExpirationDate, other=other)
+        super(Pantry, self).__init__(Name=Name, Quantity=Quantity, Measure=Measure,
+                                     ExpirationDate=ExpirationDate, other=other)
 
     def help(self):
         return {'Name': 'The name of this item in the pantry',
