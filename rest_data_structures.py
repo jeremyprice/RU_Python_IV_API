@@ -7,7 +7,7 @@ class RDS(object):
         self.info = {k: v for k,v in kwargs.items() if k[0].isupper()}
 
         if 'other' in kwargs and kwargs['other']:
-            self.update(other)
+            self.update(kwargs['other'])
 
     def get_mapping(self):
         return self.info
@@ -27,7 +27,7 @@ class RDS(object):
 
     def update(self, other):
         for k in other:
-            if k in self.info:
+            if k in self.info and not other[k] is None:
                 self.info[k] = other[k]
 
 

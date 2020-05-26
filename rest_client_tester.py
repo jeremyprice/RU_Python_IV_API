@@ -4,10 +4,34 @@ import requests
 import sys
 from urllib.parse import urljoin
 
+
+def test_collection(col_url, new_item, put_item, headers, singular_pre):
+    # test the GETs
+    print(requests.get(col_url, headers=headers).json())
+    print(requests.get(col_url).json())
+    item_id = requests.post(col_url, headers=headers, json=new_item).json()[singular_pre]
+    print(item_id)
+    print(requests.get(col_url, headers=headers).json())
+    # test the GET on the /collection/<id>
+    item_url = '/'.join([col_url,item_id])
+    item_info = requests.get(item_url, headers=headers).json()
+    print(item_info)
+    # test the PUT on /collection/<id>
+    put_result = requests.put(item_url, headers=headers, json=put_item).json()
+    print(put_result)
+    # get the newly put one to make sure
+    item_info = requests.get(item_url, headers=headers).json()
+    print(item_info)
+    # test the DELETE on /collection/<id>
+    print(requests.delete(item_url, headers=headers).json())
+
+
 base_url = sys.argv[1]
 get_token_url = urljoin(base_url, '/get_token')
 cars_url = urljoin(base_url, '/cars')
 format_url = urljoin(base_url, '/formats')
+appliances_url = urljoin(base_url, '/appliances')
+pantry_url = urljoin(base_url, '/pantry')
 
 # test the format urls
 print(requests.get(format_url).json())
@@ -17,26 +41,14 @@ for format in ['car', 'appliance', 'pantry']:
 my_token = requests.get(get_token_url).json()['X-Auth-Token']
 print(my_token)
 headers = {'X-Auth-Token':my_token}
-# test the GETs on /cars
-print(requests.get(cars_url, headers=headers).json())
-print(requests.get(cars_url).json())
+
 new_car = {'Name': 'Blue flash',
            'Make': 'Honda',
            'Model': 'Fit',
            'Year': '2012',
            'PrimaryDriver': 'Jeremy',
            'Color': 'Blue'}
-car_id = requests.post(cars_url, headers=headers, json=new_car).json()['car']
-print(car_id)
-print(requests.get(cars_url, headers=headers).json())
-# test the GET on the /cars/<id>
-car_url = '/'.join([cars_url,car_id])
-car_info = requests.get(car_url, headers=headers).json()
-print(car_info)
-# test the PUT on /cars/<id>
-car_info['Make'] = 'Ford'
-car_info['Year'] = '1999'
-new_car_info = requests.put(car_url, headers=headers, json=car_info).json()
-print(new_car_info)
-# test the DELETE on /cars/<id>
-print(requests.delete(car_url, headers=headers).json())
+put_car = {'Make': 'Ford',
+           'Year': '1999'}
+
+test_collection(cars_url, new_car, put_car, headers, 'car')

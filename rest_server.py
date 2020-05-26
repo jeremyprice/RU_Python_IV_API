@@ -6,7 +6,7 @@ from logging.handlers import RotatingFileHandler
 import os
 from utils import generate_id
 import redis
-from rest_data_structures import Car, Appliance
+from rest_data_structures import Car, Appliance, Pantry
 
 
 app = Flask(__name__)
@@ -131,10 +131,10 @@ def handle_item(token, collection_pre, singular_pre, item_id, data_structure):
     elif request.method == 'PUT':
         # update the item
         req_item = request.get_json()
-        existing_item = rclient.get_item(singular_pre, item_id)
+        existing_item = rclient.get_item(collection_pre, item_id)
         item = data_structure(other=existing_item)
         item.update(req_item)
-        rclient.update_item(singular_pre, item_id, item)
+        rclient.update_item(collection_pre, item_id, item)
         output = dict(**item.get_mapping())
         output[singular_pre] = item_id
     return output
@@ -215,6 +215,38 @@ def appliances(valid_token=False):
         output = {'usage': 'send your token in as the value with the key "X-Auth-Token" in the request headers'}
     return jsonify(**output)
 
+
+@app.route('/appliances/<appliance_id>', methods=['GET', 'PUT', 'DELETE'])
+@validate_token
+def appliance(appliance_id=None, valid_token=False):
+    if valid_token:
+        output = handle_item(valid_token, 'appliances', 'appliance', appliance_id, Appliance)
+    else:
+        # invalid token - send the usage info
+        output = {'usage': 'send your token in as the value with the key "X-Auth-Token" in the request headers'}
+    return jsonify(**output)
+
+
+@app.route('/pantry', methods=['GET', 'POST', 'PUT'])
+@validate_token
+def pantry(valid_token=False):
+    if valid_token:
+        output = handle_collection(valid_token, 'pantry', 'pantry_item', Pantry)
+    else:
+        # send the usage info
+        output = {'usage': 'send your token in as the value with the key "X-Auth-Token" in the request headers'}
+    return jsonify(**output)
+
+
+@app.route('/pantry/<pantry_item_id>', methods=['GET', 'PUT', 'DELETE'])
+@validate_token
+def pantry_item(pantry_item_id=None, valid_token=False):
+    if valid_token:
+        output = handle_item(valid_token, 'pantry', 'pantry_item', pantry_item_id, Pantry)
+    else:
+        # invalid token - send the usage info
+        output = {'usage': 'send your token in as the value with the key "X-Auth-Token" in the request headers'}
+    return jsonify(**output)
 
 
 if __name__ == '__main__':
