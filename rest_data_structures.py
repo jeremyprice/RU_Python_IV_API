@@ -58,3 +58,15 @@ class Appliance(RDS):
                 'Location': 'The location this appliance lives at',
                 'Color': 'The color of the appliance',
                 'Type': 'The type of the appliance (i.e. toaster, oven, fridge)'}
+
+
+class Pantry(RDS):
+    def __init__(self, Name=None, Quantity=None, Measure=None, ExpirationDate=None, other=None):
+        super(Car, self).__init__(Name=Name, Quantity=Quantity, Measure=Measure,
+                                  ExpirationDate=ExpirationDate, other=other)
+
+    def help(self):
+        return {'Name': 'The name of this item in the pantry',
+                'Quantity': 'How many of these items are in the pantry',
+                'Measure': 'How much of each item do you have (i.e. 1 lb, 12 oz)?',
+                'ExpirationDate': 'The date this item will expire'}

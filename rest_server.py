@@ -6,7 +6,7 @@ from logging.handlers import RotatingFileHandler
 import os
 from utils import generate_id
 import redis
-from rest_data_structures import Car
+from rest_data_structures import Car, Appliance
 
 
 app = Flask(__name__)
@@ -98,19 +98,46 @@ def handle_collection(token, collection_pre, singular_pre, data_structure):
     rclient = RedisClient()
     if request.method == 'GET':
         # return the list of this item
-        output = {collection_pre: rclient.get_item_list(valid_token, collection_pre)}
+        output = {collection_pre: rclient.get_item_list(token, collection_pre)}
     elif request.method == 'POST':
         # create a new item
         req_item = request.get_json()
         new_item = data_structure()
         if new_item.create(req_item):
             # has all the fields we need
-            item_id = rclient.create_item(valid_token, collection_pre, new_item)
+            item_id = rclient.create_item(token, collection_pre, new_item)
             output = {singular_pre: item_id}
         else:
             # does not have the required fields
             app.logger.warning('Tried to create a {} with bad params: {}'.format(singular_pre, req_item))
             abort(400)
+    return output
+
+def handle_item(token, collection_pre, singular_pre, item_id, data_structure):
+    rclient = RedisClient()
+    if not rclient.item_in_list(token, collection_pre, item_id):
+        # this id does not exist - return an error
+        app.logger.warning('Invalid {} id {}'.format(singular_pre, car_id))
+        abort(400)
+    if request.method == 'GET':
+        # return the info for this item
+        item = rclient.get_item(collection_pre, item_id)
+        output = dict(**item)
+        output[singular_pre] = item_id
+    elif request.method == 'DELETE':
+        # delete the given car
+        rclient.delete_item(token, collection_pre, item_id)
+        output = {'result': 'success'}
+    elif request.method == 'PUT':
+        # update the item
+        req_item = request.get_json()
+        existing_item = rclient.get_item(singular_pre, item_id)
+        item = data_structure(other=existing_item)
+        item.update(req_item)
+        rclient.update_item(singular_pre, item_id, item)
+        output = dict(**item.get_mapping())
+        output[singular_pre] = item_id
+    return output
 
 @app.after_request
 def add_header(response):
@@ -160,7 +187,7 @@ def get_token():
 @validate_token
 def cars(valid_token=False):
     if valid_token:
-        handle_collection(valid_token, 'cars', 'car', Car)
+        output = handle_collection(valid_token, 'cars', 'car', Car)
     else:
         # send the usage info
         output = {'usage': 'send your token in as the value with the key "X-Auth-Token" in the request headers'}
@@ -171,32 +198,23 @@ def cars(valid_token=False):
 @validate_token
 def car(car_id=None, valid_token=False):
     if valid_token:
-        # send the info for this token
-        rclient = RedisClient()
-        if not rclient.item_in_list(valid_token, 'cars', car_id):
-            # this id does not exist - return an error
-            app.logger.warning('Invalid car id {}'.format(car_id))
-            abort(400)
-        if request.method == 'GET':
-            # return the info for this car
-            item = rclient.get_item('cars', car_id)
-            output = dict(car=car_id, **item)
-        elif request.method == 'DELETE':
-            # delete the given car
-            rclient.delete_item(valid_token, 'cars', car_id)
-            output = {'result': 'success'}
-        elif request.method == 'PUT':
-            # update the item
-            req_item = request.get_json()
-            existing_item = rclient.get_item('car', car_id)
-            car = Car(other=existing_item)
-            car.update(req_item)
-            rclient.update_item('car', car_id, car)
-            output = dict(car=car_id, **car.get_mapping())
+        output = handle_item(valid_token, 'cars', 'car', car_id, Car)
     else:
         # invalid token - send the usage info
         output = {'usage': 'send your token in as the value with the key "X-Auth-Token" in the request headers'}
     return jsonify(**output)
+
+
+@app.route('/appliances', methods=['GET', 'POST', 'PUT'])
+@validate_token
+def appliances(valid_token=False):
+    if valid_token:
+        output = handle_collection(valid_token, 'appliances', 'appliance', Appliance)
+    else:
+        # send the usage info
+        output = {'usage': 'send your token in as the value with the key "X-Auth-Token" in the request headers'}
+    return jsonify(**output)
+
 
 
 if __name__ == '__main__':
