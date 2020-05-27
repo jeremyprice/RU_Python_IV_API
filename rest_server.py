@@ -169,7 +169,9 @@ def formats(format=None):
     elif format == 'pantry':
         output = {'error': 'not implemented yet'}
     elif format == None:
-        output = {'car':Car().help()}
+        output = {'car':Car().help(),
+                  'appliance':Appliance().help(),
+                  'pantry':Pantry().help()}
     else:
         output = {'error': 'invalid format requested: {}'.format(format)}
     return jsonify(**output)
