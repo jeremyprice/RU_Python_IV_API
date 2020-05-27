@@ -22,11 +22,12 @@ class CustomFormatter(logging.Formatter):
         return super(CustomFormatter, self).format(record)
 
 
-handler = RotatingFileHandler('logs/app.log', maxBytes=10*1024*1024, backupCount=20)
-handler.setLevel(logging.INFO)
-custom_format = '''%(levelname)s %(name)s %(path)s %(endpoint)s %(remote_addr)s %(access_route)s %(message)s\n%(headers)s\n%(data)s\n *******'''  # noqa E105
-handler.setFormatter(CustomFormatter(fmt=custom_format))
-app.logger.addHandler(handler)
+def setup_logging():
+    handler = RotatingFileHandler('logs/app.log', maxBytes=10*1024*1024, backupCount=20)
+    handler.setLevel(logging.INFO)
+    custom_format = '''%(levelname)s %(name)s %(path)s %(endpoint)s %(remote_addr)s %(access_route)s %(message)s\n%(headers)s\n%(data)s\n *******'''  # noqa E105
+    handler.setFormatter(CustomFormatter(fmt=custom_format))
+    app.logger.addHandler(handler)
 
 
 @app.after_request
@@ -80,5 +81,6 @@ def step(step_id):
     return jsonify(**outgoing)
 
 
+setup_logging()
 if __name__ == '__main__':
     app.run()

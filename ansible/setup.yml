@@ -4,9 +4,9 @@
 
     vars:
       packages:
-        - python-pip
+        - python3-pip
         - nginx
-        - python-dev
+        - python3-dev
         - redis-server
         - redis-tools
         - git-all
@@ -14,9 +14,12 @@
       install_directory: /var/app/py4class
       log_directory: /var/app/py4class/logs
       runtime_user: www-data
-      gunicorn_sock: /run/py4class/socket
-      gunicorn_port: 9000
-      listen_port: "80"
+      py4_gunicorn_sock: /run/py4class/socket
+      py4_gunicorn_port: 9000
+      rest_gunicorn_sock: /run/py4rest/socket
+      rest_gunicorn_port: 9090
+      py4_listen_port: "80"
+      rest_listen_port: "8080"
 
     tasks:
       - name: setup {{ runtime_user }} user
@@ -34,8 +37,14 @@
       - name: create base directory
         file: path={{ base_directory }} state=directory owner={{ runtime_user }}
 
-      - name: create runtime tmp directory
-        file: path=/run/py4class state=directory owner={{ runtime_user }}
+      - name: create runtime tmp directories
+        file: path={{ item }} state=directory owner={{ runtime_user }}
+        with_items:
+          - /run/py4class
+          - /run/py4rest
+
+      - name: create deployment directories
+        file: path={{ install_directory }} state=directory owner={{ runtime_user }}
 
       - name: clone the repo
         git: repo=git://github.com/jeremyprice/RU_Python_IV_API.git
@@ -44,24 +53,33 @@
         become_user: "{{ runtime_user }}"
         notify:
           - restart redis
-          - restart app
-
-      - name: create deployment directories
-        file: path={{ install_directory }} state=directory owner={{ runtime_user }}
+          - restart py4
+          - restart rest
 
       - name: create log directory
         file: path={{ log_directory }} state=directory owner={{ runtime_user }}
 
-      - name: install the system files
+      - name: install the py4 system files
         template: src={{ item.src }} dest={{ item.dest }}
         notify:
           - reload systemd
           - restart redis
-          - restart app
+          - restart py4
         with_items:
-          - { src: "systemd.service.j2", dest: "/lib/systemd/system/py4class.service" }
-          - { src: "systemd.socket.j2", dest: "/lib/systemd/system/py4class.socket" }
-          - { src: "tmpfiles.d.conf.j2", dest: "/usr/lib/tmpfiles.d/py4class.conf" }
+          - { src: "py4.systemd.service.j2", dest: "/lib/systemd/system/py4class.service" }
+          - { src: "py4.systemd.socket.j2", dest: "/lib/systemd/system/py4class.socket" }
+          - { src: "py4.tmpfiles.d.conf.j2", dest: "/usr/lib/tmpfiles.d/py4class.conf" }
+
+      - name: install the rest system files
+        template: src={{ item.src }} dest={{ item.dest }}
+        notify:
+          - reload systemd
+          - restart redis
+          - restart rest
+        with_items:
+          - { src: "rest.systemd.service.j2", dest: "/lib/systemd/system/py4rest.service" }
+          - { src: "rest.systemd.socket.j2", dest: "/lib/systemd/system/py4rest.socket" }
+          - { src: "rest.tmpfiles.d.conf.j2", dest: "/usr/lib/tmpfiles.d/py4rest.conf" }
 
       - name: install the nginx config file
         template: src=nginx.j2 dest=/etc/nginx/sites-available/py4class
@@ -83,13 +101,17 @@
         ufw: rule=limit state=enabled port=ssh
 
       - name: poke a hole in the firewall for the nginx server
-        ufw: proto=tcp rule=allow state=enabled to_port={{ listen_port }}
+        ufw: proto=tcp rule=allow state=enabled to_port={{ item }}
+        with_items:
+          - "80"
+          - "8080"
 
       - name: ensure nginx, redis, and app are started and boot enabled
         service: name={{ item }} state=started enabled=yes
         with_items:
           - nginx
           - py4class
+          - py4rest
           - redis-server
 
     handlers:
@@ -99,8 +121,11 @@
       - name: restart redis
         service: name=redis state=restarted
 
-      - name: restart app
+      - name: restart py4
         service: name=py4class state=restarted
+
+      - name: restart rest
+        service: name=py4rest state=restarted
 
       - name: restart nginx
         service: name=nginx state=restarted

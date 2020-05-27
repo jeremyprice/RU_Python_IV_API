@@ -248,7 +248,6 @@ def pantry_item(pantry_item_id=None, valid_token=False):
         output = {'usage': 'send your token in as the value with the key "X-Auth-Token" in the request headers'}
     return jsonify(**output)
 
-
+setup_logging()
 if __name__ == '__main__':
-    setup_logging()
     app.run()

@@ -1,0 +1,17 @@
+[Unit]
+Description=py4rest gunicorn daemon
+Requires=py4rest.socket
+After=network.target
+
+[Service]
+PIDFile=/run/py4rest/pid
+User={{ runtime_user }}
+Group={{ runtime_user }}
+WorkingDirectory={{ install_directory }}
+ExecStart=/usr/local/bin/gunicorn --workers 4 --pid /run/py4rest/pid rest_server:app
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

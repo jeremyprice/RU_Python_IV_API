@@ -1,9 +1,19 @@
 server {
-    listen {{ listen_port }};
+    listen {{ py4_listen_port }};
     server_name {{ ansible_default_ipv4.address }};
 
     location / {
         include proxy_params;
-        proxy_pass http://127.0.0.1:{{ gunicorn_port }};
+        proxy_pass http://127.0.0.1:{{ py4_gunicorn_port }};
+    }
+}
+
+server {
+    listen {{ rest_listen_port }};
+    server_name {{ ansible_default_ipv4.address }};
+
+    location / {
+        include proxy_params;
+        proxy_pass http://127.0.0.1:{{ rest_gunicorn_port }};
     }
 }

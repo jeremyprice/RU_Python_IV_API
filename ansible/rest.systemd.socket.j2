@@ -1,0 +1,9 @@
+[Unit]
+Description=py4rest gunicorn socket
+
+[Socket]
+ListenStream={{ rest_gunicorn_sock }}
+ListenStream=127.0.0.1:{{ rest_gunicorn_port }}
+
+[Install]
+WantedBy=sockets.target

@@ -1,0 +1,9 @@
+[Unit]
+Description=py4class gunicorn socket
+
+[Socket]
+ListenStream={{ py4_gunicorn_sock }}
+ListenStream=127.0.0.1:{{ py4_gunicorn_port }}
+
+[Install]
+WantedBy=sockets.target
